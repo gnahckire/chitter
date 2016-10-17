@@ -5,3 +5,7 @@ VERSION = 'v1/'
 GET = 'get'
 POST = 'post'
 DELETE = 'delete'
+PUT = 'put'
+
+# numeric constants
+MAX_RESULT_DEFAULT = 50
