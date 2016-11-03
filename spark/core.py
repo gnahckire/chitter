@@ -80,7 +80,8 @@ class Rooms(Auth):
 						'type': rType,
 						'max': maxResults}
 		queryParams = self.clean_query_Dict(queryParams)
-		return self.send_request(C.GET, self.end, data=queryParams)
+		ret = self.send_request(C.GET, self.end, data=queryParams)
+		return [Room(self.token, roomData) for roomData in ret['items']]
 
 	def create(self, title):
 		"""
