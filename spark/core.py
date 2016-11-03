@@ -13,29 +13,23 @@ class Auth(object):
 		self.token = token
 		self.url = C.BASE_URL + C.VERSION
 		self.header = headers = {'authorization': self.token,
-									'content-type': "application/json"
-								}
+								 'content-type': 'application/json'}
 
 	def send_request(self, method, end, data=None, params=None):
 		fullUrl = self.url + end
 		data = json.dumps(data)
 		response = requests.request(method, fullUrl, headers=self.header, data=data, params=params)
-		#print response.status_code
-		#TODO (erikchan): check response status_code & raise appropriate exception
+		response.raise_for_status()
 		ret = None
 		if response.text:
-			ret = json.loads(response.text)
+			ret = response.json()
 		return ret
-
 
 	def clean_query_Dict(self, query_Dict):
 		"""
 		removes NoneTypes from the dict
 		"""
 		return {k: v for k, v in query_Dict.items() if v}
-
-	def _checkRespCode(self):
-		pass
 
 	@classmethod
 	def isEmail(cls, testString):
@@ -66,8 +60,7 @@ class People(Auth):
 		return self.send_request(C.GET, self.end+'me')
 
 	def get_person(self, personId): #TODO: return person class
-		return self.send_request(C.GET, self.end+personId)
-
+		return self.send_request(C.GET, self.end+personId)		
 
 
 
@@ -90,11 +83,18 @@ class Rooms(Auth):
 		return self.send_request(C.GET, self.end, data=queryParams)
 
 	def create(self, title):
+		"""
+		:param title: UTF-8 string that can contain emoji bytes
+		http://apps.timwhitlock.info/emoji/tables/unicode
+		"""
 		return self.send_request(C.POST, self.end, data={'title':title})
 
 	def get_room(self, roomId):
+		return Room(self.token, self.get_room_data(roomId))
+
+	def get_room_data(self, roomId):
 		roomDict = self.send_request(C.GET, self.end+roomId)
-		return Room(self.token, roomDict['id'])
+		return roomDict
 
 	def update(self, roomId, title): 
 		return self.send_request(C.PUT, self.end+roomId, data={'title':title})
@@ -104,7 +104,7 @@ class Rooms(Auth):
 
 
 
-class Room(Auth):
+class Room(Rooms):
 	"""docstring for Room"""
 	def __init__(self, token, roomId_or_dict):
 		super(Room, self).__init__(token)
@@ -115,7 +115,13 @@ class Room(Auth):
 		if isinstance(roomId_or_dict, dict):
 			self._data = roomId_or_dict
 		else: #is ID
-			self.id = roomId_or_dict['id']
+			self._data = self.get_room_data(roomId_or_dict)
+		
+		self.id = self._data['id'].encode(C.UTF8)
+		self.name = self._data['title'].encode(C.UTF8)
+
+	def __repr__(self):
+		return '<Room name={}, id={}>'.format(self.name, self.id)
 
 	def __iadd__(self, addend):
 		"""
@@ -157,11 +163,13 @@ class Room(Auth):
 		isEmail = self.isEmail(string)
 		membership = None
 		for person in self.people:
+			#hmmm do string encodings matter here?
 			if isEmail:
-				if string == person['personEmail']
+				if string == person['personEmail']:
+					membership = person['id']
 			else:
 				if string == person['personDisplayName']:
-					pass
+					membership = person['id']
 		return membership
 
 
@@ -181,7 +189,7 @@ class Memberships(Auth):
 						'personEmail': personEmail,
 						'max': maxResults}
 		queryParams = self.clean_query_Dict(queryParams)
-		return self.send_request(C.GET, self.end, data=queryParams)
+		return self.send_request(C.GET, self.end, params=queryParams)
 
 	def create(self, roomId, personId=None, personEmail=None, isMod=False, maxResults=C.MAX_RESULT_DEFAULT):
 		queryParams = {'roomId': roomId,
