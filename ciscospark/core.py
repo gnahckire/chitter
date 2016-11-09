@@ -1,6 +1,5 @@
 import requests
 import json
-import re
 from . import constants as C
 
 
@@ -31,13 +30,6 @@ class Auth(object):
 		"""
 		return {k: v for k, v in query_Dict.items() if v}
 
-	@classmethod
-	def isEmail(cls, testString):
-		isEmail = False
-		if re.match(r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)', testString):
-			isEmail = True
-		return isEmail
-
 
 
 class People(Auth):
@@ -54,7 +46,7 @@ class People(Auth):
 						'displayName': displayName,
 						'max': maxResults}
 		queryParams = self.clean_query_Dict(queryParams)
-		return self.send_request(C.GET, self.end, params=queryParams)
+		return self.send_request(C.GET, self.end, params=queryParams)['items']
 
 	def get_my_details(self):
 		return self.send_request(C.GET, self.end+'me')
@@ -145,10 +137,10 @@ class Room(Rooms):
 		:param subtrahend: dict w/ keys messageId or person (id or email)
 		"""
 
-		if addend.get('message'):
-			self._messages.delete(self.id, text=addend.get('message'))
-		if addend.get('person'):
-			membership = self._findMembership(addend.get('person'))
+		if subtrahend.get('message'):
+			self._messages.delete(subtrahend.get('message'))
+		if subtrahend.get('person'):
+			membership = self._findMembership(subtrahend.get('person'))
 			self._memberships.delete(self.id, membership['id'])
 		return self
 
@@ -161,16 +153,12 @@ class Room(Rooms):
 		return self._memberships.list(roomId=self.id)['items']
 
 	def _findMembership(self, string):
-		isEmail = self.isEmail(string)
 		membership = None
 		for person in self.people:
-			#hmmm do string encodings matter here?
-			if isEmail:
-				if string == person['personEmail']:
-					membership = person['id']
-			else:
-				if string == person['personDisplayName']:
-					membership = person['id']
+			#hmmm check/clean `string` str encodings here?
+			if string == person['personEmail'] or string == person['personDisplayName']:
+				membership = person
+				break
 		return membership
 
 
@@ -230,7 +218,7 @@ class Messages(Auth):
 		queryParams = self.clean_query_Dict(queryParams)
 		return self.send_request(C.GET, self.end, params=queryParams)
 
-	def create(self, roomId=None, text=None, markdown=None, files=None, toPersonId=None, toPersonEmail=None, maxResults=C.MAX_RESULT_DEFAULT):
+	def create(self, roomId, text=None, markdown=None, files=None, toPersonId=None, toPersonEmail=None, maxResults=C.MAX_RESULT_DEFAULT):
 		queryParams = {'roomId': roomId,
 						'text': text,
 						'markdown': markdown,
@@ -246,7 +234,3 @@ class Messages(Auth):
 
 	def delete(self, messageId):
 		return self.send_request(C.DELETE, self.end+messageId)
-
-
-
- 
