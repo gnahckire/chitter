@@ -9,7 +9,8 @@ setup(
   description='Python wrapper for Cisco Spark\'s REST API',
   author='Erik Chang',
   author_email='gnahckire@gmail.com,erikchan@cisco.com',
-  url='',
+  url='https://github.com/gnahckire/ciscospark-py',
   packages=['ciscospark'],
-  install_requires=['requests']
+  install_requires=['requests'],
+  keywords = ['cisco', 'spark', 'ciscospark']
 )
