@@ -1,6 +1,9 @@
 # ciscospark
 python library wrapper for CiscoSpark's REST API
 
+[![Build Status](https://travis-ci.org/gnahckire/ciscospark-py.svg?branch=master)](https://travis-ci.org/gnahckire/ciscospark-py)
+[![PyPI version](https://badge.fury.io/py/ciscospark.svg)](https://badge.fury.io/py/ciscospark)
+[![Coverage Status](https://coveralls.io/repos/github/gnahckire/ciscospark-py/badge.svg?branch=master)](https://coveralls.io/github/gnahckire/ciscospark-py?branch=master)
 
 ## installation
 ```
