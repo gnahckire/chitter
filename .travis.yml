@@ -1,14 +1,14 @@
 language: python
 python:
 #can't do too many b/c will hit Spark rate limiter
-  - "2.7"
+    - "2.7"
 
 # command to install dependencies
 install:
-  - pip install .
+    - pip install .
 
 script:
-	- python setup.py nosetests
+    - python setup.py nosetests
 
 after_success:
     - coveralls
