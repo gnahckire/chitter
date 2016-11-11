@@ -5,8 +5,8 @@ import unittest
 from ciscospark import core
 
 
-ALFRED_KEY = os.environ['ALFRED_KEY']
-MY_TOKEN = 'Bearer ' + ALFRED_KEY
+GNAHCKIRE_KEY = os.environ['GNAHCKIRE_KEY']
+MY_TOKEN = 'Bearer ' + GNAHCKIRE_KEY
 PERSON_ID = 'Y2lzY29zcGFyazovL3VzL1BFT1BMRS85ZTAxNzczMS03NTE4LTRlN2UtOTNlMy0wNGVkMjJlN2YxNGU' #Batman@sparkbot.io
 RESULT_ERROR_MSG = 'returned result is not in expected format'
 
@@ -112,7 +112,7 @@ class Rooms(unittest.TestCase):
   def test_iadd_personId_person_property(self):
     self.room += {'person': PERSON_ID}
     result = self.room.people
-    self.assertEqual(len(result), 2)
+    self.assertEqual(len(result), 3) #3 b/c of room watcher
 
   def test_iadd_message_and_person_email_messages_proerty(self):
     self.room += {'person': 'Batman@sparkbot.io',
