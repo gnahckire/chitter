@@ -5,7 +5,7 @@ python:
 
 # command to install dependencies
 install:
-    - pip install .
+    - pip install -e .
 
 script:
     - python setup.py nosetests
