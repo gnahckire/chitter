@@ -10,7 +10,7 @@ setup(
   author='Erik Chang',
   author_email='gnahckire@gmail.com,erikchan@cisco.com',
   url='https://github.com/gnahckire/ciscospark-py',
-  download_url='https://github.com/gnahckire/ciscospark-py/tarball/0.1.0',
+  download_url='https://github.com/gnahckire/ciscospark-py/releases',
   packages=['ciscospark'],
   install_requires=['requests'],
   keywords = ['cisco', 'spark', 'ciscospark']
