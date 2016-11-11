@@ -1,9 +1,12 @@
+import os
 import mock
 import unittest
 
 from ciscospark import core
 
-MY_TOKEN = 'Bearer my_token'
+
+ALFRED_KEY = os.environ['ALFRED_KEY']
+MY_TOKEN = 'Bearer ' + ALFRED_KEY
 PERSON_ID = 'Y2lzY29zcGFyazovL3VzL1BFT1BMRS85ZTAxNzczMS03NTE4LTRlN2UtOTNlMy0wNGVkMjJlN2YxNGU' #Batman@sparkbot.io
 RESULT_ERROR_MSG = 'returned result is not in expected format'
 
