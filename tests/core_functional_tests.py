@@ -7,7 +7,7 @@ from ciscospark import core
 
 GNAHCKIRE_KEY = os.environ['GNAHCKIRE_KEY']
 MY_TOKEN = 'Bearer ' + GNAHCKIRE_KEY
-PERSON_ID = 'Y2lzY29zcGFyazovL3VzL1BFT1BMRS85ZTAxNzczMS03NTE4LTRlN2UtOTNlMy0wNGVkMjJlN2YxNGU' #Batman@sparkbot.io
+PERSON_ID = 'Y2lzY29zcGFyazovL3VzL1BFT1BMRS85ZTAxNzczMS03NTE4LTRlN2UtOTNlMy0wNGVkMjJlN2YxNGU' # Batman@sparkbot.io
 RESULT_ERROR_MSG = 'returned result is not in expected format'
 
 class TestPeople(unittest.TestCase):

@@ -66,7 +66,7 @@ class TestRooms(unittest.TestCase):
     self.send_request.assert_called()
 
   def test_get_room_data(self):
-    self.rooms.get_room_data('room_id')
+    self.rooms.get_data('room_id')
     self.send_request.assert_called()
 
   def test_create(self):

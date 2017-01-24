@@ -13,3 +13,7 @@ PUT = 'put'
 
 # ____________ NUMERIC CONSTANTS _____________
 MAX_RESULT_DEFAULT = 50
+
+# ____________ ROOM TYPES CONSTANTS _____________
+DIRECT = 'direct'
+GROUP = 'group'
