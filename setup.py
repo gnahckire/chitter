@@ -5,7 +5,7 @@ except ImportError:
 
 setup(
   name='ciscospark',
-  version='0.1.0',
+  version='0.1.2',
   description='Python wrapper for Cisco Spark\'s REST API',
   author='Erik Chang',
   author_email='gnahckire@gmail.com,erikchan@cisco.com',

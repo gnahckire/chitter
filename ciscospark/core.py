@@ -1,12 +1,12 @@
-import requests
 import json
+import requests
+
 from . import constants as C
 
 """
 #TODO: Use **kwargs?
 #TODO: investigate options for create() querystring params
 #TODO: generalize get, delete methods?
-#TODO: how do I implement page-i-nation?
 """
 
 class Auth(object):
@@ -18,21 +18,44 @@ class Auth(object):
     self.header = headers = {'authorization': self.token,
                              'content-type': 'application/json'}
 
-  def send_request(self, method, end, data=None, params=None):
+  def send_request(self, method, end, data=None, params=None, limit=None):
+    # https://developer.ciscospark.com/pagination.html
+    result = None
     fullUrl = self.url + end
     data = json.dumps(data)
     response = requests.request(method, fullUrl, headers=self.header, data=data, params=params)
     response.raise_for_status()
-    ret = None
-    if response.text:
-      ret = response.json()
-    return ret
 
-  def clean_query_Dict(self, query_Dict):
-    """
-    removes NoneTypes from the dict
+    if response.text:
+      result = response.json()
+
+    paginationLink = response.headers.get('Link')
+    if limit and paginationLink:
+      while paginationLink:
+        url, rel = self.parseLinkHeader(paginationLink)
+        if rel == 'next':
+          response = requests.request(C.GET, url, headers=self.header)
+          response.raise_for_status()
+          paginationLink = response.headers.get('Link')
+          items = response.json()['items']
+          print len(items)
+          result['items'].extend(items)
+
+    return result
+
+  @classmethod
+  def clean_query_Dict(cls, query_Dict):
+    """removes NoneTypes from the dict
     """
     return {k: v for k, v in query_Dict.items() if v}
+
+  @classmethod
+  def parseLinkHeader(cls, linkHeader):
+    #<https://api.ciscospark.com/v1/memberships/?max=50&roomId=Y2lzY29zcGFyazovL3VzL1JPT00vNzJmYjcwNDAtMGUyMS0xMWU3LTk3NmItNTU4ZDMwZmQ1YzQy&cursor=cm9vbUlkPTcyZmI3MDQwLTBlMjEtMTFlNy05NzZiLTU1OGQzMGZkNWM0MiZsaW1pdD01MCZiZWZvcmUmYWZ0ZXI9MGVjODc3OTItOTU0NC00NTJlLTkzN2EtNDAyY2U1MzUyMjRm>; rel="next"
+    parse = linkHeader.split(';')
+    url = parse[0][1:-1]
+    rel = parse[1].strip().split('rel=')[1][1:-1]
+    return url, rel
 
 
 
@@ -45,12 +68,12 @@ class People(Auth):
   def __getitem__(self, personId):
     return self.get(personId)
 
-  def list(self, email=None, displayName=None, maxResults=C.MAX_RESULT_DEFAULT):
+  def list(self, email=None, displayName=None, maxResults=C.MAX_RESULT_DEFAULT, limit=C.ALL):
     queryParams = {'email': email,
             'displayName': displayName,
             'max': maxResults}
     queryParams = self.clean_query_Dict(queryParams)
-    return self.send_request(C.GET, self.end, params=queryParams)['items']
+    return self.send_request(C.GET, self.end, params=queryParams, limit=limit)['items']
 
   def get_my_details(self):
     return self.send_request(C.GET, self.end+'me')
@@ -71,7 +94,7 @@ class Rooms(Auth):
   def __getitem__(self, roomId):
     return self.get(roomId)
 
-  def list(self, teamId=None, rType=None, maxResults=C.MAX_RESULT_DEFAULT):
+  def list(self, teamId=None, rType=None, maxResults=C.MAX_RESULT_DEFAULT, limit=C.ALL):
     """
     rType can be DIRECT or GROUP
     """
@@ -79,7 +102,7 @@ class Rooms(Auth):
             'type': rType,
             'max': maxResults}
     queryParams = self.clean_query_Dict(queryParams)
-    ret = self.send_request(C.GET, self.end, data=queryParams)
+    ret = self.send_request(C.GET, self.end, data=queryParams, limit=limit)
     return [Room(self.token, roomData) for roomData in ret['items']]
 
   def create(self, title):
@@ -129,8 +152,12 @@ class Room(Rooms):
     """
 
     #TODO (erikchan): pass file to serve as upload & add markdown suppourt
-    if addend.get('message'):
-      self._messages.create(self.id, text=addend.get('message'))
+    message = addend.get('message')
+    markdown = addend.get('markdown')
+    files = addend.get('files')
+
+    if message or markdown or files:
+      self._messages.create(self.id, text=message, markdown=markdown, files=files)
     if addend.get('person'):
       if '@' in addend.get('person'):
         self._memberships.create(self.id, personEmail=addend.get('person'))
@@ -179,13 +206,13 @@ class Memberships(Auth):
   def __getitem__(self, membershipId):
     return self.get(membershipId)
 
-  def list(self, roomId=None, personId=None, personEmail=None, maxResults=C.MAX_RESULT_DEFAULT): 
+  def list(self, roomId=None, personId=None, personEmail=None, maxResults=C.MAX_RESULT_DEFAULT, limit=C.ALL): 
     queryParams = {'roomId': roomId,
                    'personId': personId,
                    'personEmail': personEmail,
                    'max': maxResults}
     queryParams = self.clean_query_Dict(queryParams)
-    return self.send_request(C.GET, self.end, params=queryParams)['items']
+    return self.send_request(C.GET, self.end, params=queryParams, limit=limit)['items']
 
   def create(self, roomId, personId=None, personEmail=None, isMod=False):
     queryParams = {'roomId': roomId,
@@ -216,13 +243,13 @@ class Messages(Auth):
   def __getitem__(self, messageId):
     return self.get(messageId)
 
-  def list(self, roomId, before=None, beforeMessage=None, maxResults=C.MAX_RESULT_DEFAULT): 
+  def list(self, roomId, before=None, beforeMessage=None, maxResults=C.MAX_RESULT_DEFAULT, limit=C.ALL):
     queryParams = {'roomId': roomId,
                    'before': before,
                    'beforeMessage': beforeMessage,
                    'max': maxResults}
     queryParams = self.clean_query_Dict(queryParams)
-    return self.send_request(C.GET, self.end, params=queryParams)['items']
+    return self.send_request(C.GET, self.end, params=queryParams, limit=limit)['items']
 
   def create(self, roomId, text=None, markdown=None, files=None, toPersonId=None, toPersonEmail=None):
     queryParams = {'roomId': roomId,
@@ -251,10 +278,10 @@ class Teams(Auth):
     def __getitem__(self, teamId):
       return self.get(teamId)
 
-  def list(self, maxResults=C.MAX_RESULT_DEFAULT): 
+  def list(self, maxResults=C.MAX_RESULT_DEFAULT, limit=C.ALL): 
     queryParams = {'max': maxResults}
     queryParams = self.clean_query_Dict(queryParams)
-    return self.send_request(C.GET, self.end, params=queryParams)['items']
+    return self.send_request(C.GET, self.end, params=queryParams, limit=limit)['items']
 
   def create(self, name): #can it be an emoji?
     return self.send_request(C.POST, self.end, data={'name':name})
@@ -281,10 +308,10 @@ class WebHooks(Auth):
     def __getitem__(self, webHookId):
       return self.get(webHookId)
 
-  def list(self, maxResults=C.MAX_RESULT_DEFAULT): 
+  def list(self, maxResults=C.MAX_RESULT_DEFAULT, limit=C.ALL): 
     queryParams = {'max': maxResults}
     queryParams = self.clean_query_Dict(queryParams)
-    return self.send_request(C.GET, self.end, params=queryParams)['items']
+    return self.send_request(C.GET, self.end, params=queryParams, limit=limit)['items']
 
   def create(self, name, targetUrl=None, resource=None, event=None, _filter=None, secret=None):
     #TODO: test which are req'd & compatible w/ one another
@@ -317,10 +344,10 @@ class Organizations(object):
     super(Organizations, self).__init__(token)
     self.end = 'organizations/'
 
-  def list(self, maxResults=C.MAX_RESULT_DEFAULT): 
+  def list(self, maxResults=C.MAX_RESULT_DEFAULT, limit=C.ALL): 
     queryParams = {'max': maxResults}
     queryParams = self.clean_query_Dict(queryParams)
-    return self.send_request(C.GET, self.end, params=queryParams)['items']
+    return self.send_request(C.GET, self.end, params=queryParams, limit=limit)['items']
 
   def get(self, orgId):
     return self.send_request(C.GET, self.end+orgId)
@@ -333,11 +360,11 @@ class Licenses(object):
     super(Organizations, self).__init__(token)
     self.end = 'licenses/'
 
-  def list(self, orgId=None, maxResults=C.MAX_RESULT_DEFAULT): 
+  def list(self, orgId=None, maxResults=C.MAX_RESULT_DEFAULT, limit=C.ALL): 
     queryParams = {'orgId':orgId,
                    'max': maxResults}
     queryParams = self.clean_query_Dict(queryParams)
-    return self.send_request(C.GET, self.end, params=queryParams)['items']
+    return self.send_request(C.GET, self.end, params=queryParams, limit=limit)['items']
 
   def get(self, orgId):
     return self.send_request(C.GET, self.end+orgId)
@@ -350,10 +377,10 @@ class Roles(object):
     super(Organizations, self).__init__(token)
     self.end = 'roles/'
 
-  def list(self, orgId=None, maxResults=C.MAX_RESULT_DEFAULT): 
+  def list(self, orgId=None, maxResults=C.MAX_RESULT_DEFAULT, limit=C.ALL): 
     queryParams = {'max': maxResults}
     queryParams = self.clean_query_Dict(queryParams)
-    return self.send_request(C.GET, self.end, params=queryParams)['items']
+    return self.send_request(C.GET, self.end, params=queryParams, limit=limit)['items']
 
   def get(self, roleId):
     return self.send_request(C.GET, self.end+roleId)

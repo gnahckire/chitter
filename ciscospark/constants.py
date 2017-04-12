@@ -12,8 +12,14 @@ DELETE = 'delete'
 PUT = 'put'
 
 # ____________ NUMERIC CONSTANTS _____________
-MAX_RESULT_DEFAULT = 50
+MAX_RESULT_DEFAULT = 500
+ALL = -1
 
 # ____________ ROOM TYPES CONSTANTS _____________
 DIRECT = 'direct'
 GROUP = 'group'
+
+# ____________ PAGINATION _____________
+NEXT = 'next'
+PREV = 'prev'
+FIRST = 'first'
